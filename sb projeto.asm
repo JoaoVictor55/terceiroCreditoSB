@@ -17,14 +17,14 @@ sw $at, 16($k1)
 
 # hardware interrupt
 mfc0 $a0, $13  # Cause
-andi $v0, $a0, 0x0100
+andi $v0, $a0, 0x0100 #verifica se existe uma interrupção pendente (o 8º bit é o primeiro bit de interrupção)
 
-beq $v0, $zero, e_int_keyrecv_end
+beq $v0, $zero, e_int_keyrecv_end #senão tiver ñ tem mais dada pra se fzr kk
 	# keyboard receive interrupt
-	xor $a0, $a0, $v0
+	xor $a0, $a0, $v0 #marca o 8º bit como 0, pois a interrupção está sendo atendida
 	mtc0 $a0, $13  # Cause
-	li $a0, 0xffff0000
-	lw $a0, 4($a0) #valor digitado
+	li $a0, 0xffff0000 #registrador de controle do teclado
+	lw $a0, 4($a0) #valor digitado (registrador de controle + 4 = registrador de dados)
 	#chama funcao pra trocar tela
 	jal change_screen
 e_int_keyrecv_end:
@@ -200,7 +200,9 @@ plataforma_loop: #imprime o boneco na plataforma repetidas vezes
         move $a0, $s5
         move $a1, $s6
         jal boneco
-	j plataforma_loop
+        
+       foo:  
+	j foo
 	
 Exit:
 	#imprime tela final
@@ -219,7 +221,7 @@ linhah:
 	li $t5, 0
 	sll $t6, $a1, 7  #$a1 x 128 eixo y
 	sll $t7, $a0, 2  #$a0 x 4 eixo x
-	addu $t4, $t6, $t7 #endere�o
+	addu $t4, $t6, $t7 #endereço
 	addu $t4, $t4, $s0
 	
 Linha:
@@ -240,7 +242,9 @@ boneco:
 	sll $t6, $a1, 7  # $a1 x 128 (eixo y)
 	sll $t7, $a0, 2  # $a0 x 4 (eixo x)
 	addu $t4, $t6, $t7  # endereço
-	addu $t4, $t4, $s0
+	addu $t4, $t4, $s0 #s0 é o inicio dos endereços do display
+
+	#parte laranja
 	sw $s1, 0($t4)    
 	sw $s1, 4($t4)
 	sw $s1, 8($t4)
@@ -281,7 +285,7 @@ fundo:
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
 	
-	#chama funcao pra implimir linha da plataforma 0
+	#chama funcao pra imprimir linha da plataforma 0
 	li $a1, 10
 	li $a0, 1
 	jal linhah
@@ -290,7 +294,7 @@ fundo:
 	li $a0, 1
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 1
+	#chama funcao pra imprimir linha da plataforma 1
 	li $a1, 10
 	li $a0, 13
 	jal linhah
@@ -299,7 +303,7 @@ fundo:
 	li $a0, 2
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 2
+	#chama funcao pra imprimir linha da plataforma 2
 	li $a1, 10
 	li $a0, 25
 	jal linhah
@@ -308,7 +312,7 @@ fundo:
 	li $a0, 3
 	jal get_color# pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 3
+	#chama funcao pra imprimir linha da plataforma 3
 	li $a1, 20
 	li $a0, 1
 	jal linhah
@@ -317,7 +321,7 @@ fundo:
 	li $a0, 4
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 4
+	#chama funcao pra imprimir linha da plataforma 4
 	li $a1, 20
 	li $a0, 13
 	jal linhah
@@ -326,7 +330,7 @@ fundo:
 	li $a0, 5
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 5
+	#chama funcao pra imprimir linha da plataforma 5
 	li $a1, 20
 	li $a0, 25
 	jal linhah
@@ -335,7 +339,7 @@ fundo:
 	li $a0, 6
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-        #chama funcao pra implimir linha da plataforma 6
+        #chama funcao pra imprimir linha da plataforma 6
         li $a1, 30
 	li $a0, 1
 	jal linhah
@@ -344,7 +348,7 @@ fundo:
 	li $a0, 7
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 7
+	#chama funcao pra imprimir linha da plataforma 7
 	li $a1, 30
 	li $a0, 13
 	jal linhah
@@ -353,7 +357,7 @@ fundo:
 	li $a0, 8
 	jal get_color # pega a cor que plataforma deve ser pintada
 	move $a2, $v0 #move cor resultado para paremetro de cor de linha
-	#chama funcao pra implimir linha da plataforma 8
+	#chama funcao pra imprimir linha da plataforma 8
 	li $a1, 30
 	li $a0, 25
 	jal linhah
