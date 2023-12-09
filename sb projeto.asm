@@ -191,7 +191,6 @@ boneco_plataforma:
 	
 	#pega sorteia uma plataforma
 	jal rand
-	
 	move $a1, $v0 
 
 	#ativa a plataforma atual e imprime o fundo novamente
