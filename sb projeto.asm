@@ -44,7 +44,7 @@ eret
 #$s4 --> tela atual
 #$s5 --> valor x do boneco
 #$s6 --> valor y do boneco
-change_screen:
+change_screen: #processa a entrada do jogador e calcula a nova posição.
 	#atribui ponto de retorno pra plataforma em loop
 	la $k0, plataforma_loop
 	
@@ -146,9 +146,12 @@ change_screen:
 	displayAddress:	.word	0x10008000
 	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  #vetor com cor das plataformas
 	plataforma_ant: .space 4
+	plataforma_mortal: .space 4 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
+
 .text
 
 main:
+
 	lw $s0, displayAddress	# $s0 stores the base address for display
 	
 	#cores
@@ -172,7 +175,6 @@ main:
 	li $s5, 2 #$s5, eixo x
 	li $s6, 8 #$s6, eixo y
 
-
 # valores boneco plataforma0: a0 = 2  | a1 = 8 
 # valores boneco plataforma1: a0 = 14 | a1 = 8
 # valores boneco plataforma2: a0 = 26 | a1 = 8
@@ -187,6 +189,11 @@ main:
 boneco_plataforma:
 	jal limpa_tela #limpa posicao anterior do boneco
 	
+	#pega sorteia uma plataforma
+	jal rand
+	
+	move $a1, $v0 
+
 	#ativa a plataforma atual e imprime o fundo novamente
 	move $a0, $s4
 	jal ativar_plataforma
@@ -200,8 +207,9 @@ plataforma_loop: #imprime o boneco na plataforma repetidas vezes
         move $a0, $s5
         move $a1, $s6
         jal boneco
-        
-       foo:  
+         		                                                      
+       foo:
+       	       	
 	j foo
 	
 Exit:
@@ -211,6 +219,7 @@ Exit:
 	syscall	
 #fim_main
 
+#calcula a posição da plataforma na tela
 linhah:	
 #a2 = cor da linha
 #a1 = linha
@@ -224,12 +233,13 @@ linhah:
 	addu $t4, $t6, $t7 #endereço
 	addu $t4, $t4, $s0
 	
+#desenha as plataformas	
 Linha:
 	addiu $t5,$t5, 1
        	sw $a2, ($t4)	
        	addiu $t4, $t4, 4
        	
-       	bne $t5, 6, Linha
+       	bne $t5, 6, Linha #uma plataforma é formada por 5 pixels 
 		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 		jr $ra
@@ -512,7 +522,27 @@ ativar_plataforma:
         lw $ra, 0($sp)
 	addi $sp, $sp, 4
 	jr $ra
-	
+
+rand:
+    
+	addi $sp, $sp, -4
+		sw $ra, 0($sp)	
+
+	#gera um número aleatório entre 0 e 9 (numeração das plataformas)
+	addi $a1, $0, 10 #limite superior do sorteio (não incluso)
+	addi $v0, $0, 42 #pseudo número aleatório com limite superior
+	syscall
+
+	move $v0, $a0 
+
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+
+	jr $ra
+
+	#addi $v0 $0 1
+	#syscall
+
 #imprime a palavra fim nada tela	
 tela_fim:
 	li $t0, 0x7f7f7f
