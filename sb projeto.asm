@@ -148,6 +148,8 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 	plataforma_ant: .space 4
 	plataforma_mortal: .byte -1 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
 	player_vidas: .byte 1 #quantas vidas o jogador tem
+	plataforma_mortal_cor: .word 0xff0000 #vermelho
+	invencibilidade: .byte 1 #quando 1 o dano é desabilitado
 
 .text
 
@@ -501,7 +503,19 @@ get_color:
         # se o bit for zero ja era na cor padrao
         # se nao for zero troca a cor para a cor de ativado
         beqz $t0, exit
+			#se o bit for não for zero e for a plataforma escolhida
+			la $t1, plataforma_mortal
+			lb $t1, 0($t1)
+
+			beq $a0, $t1, pinta_morte
+			
         	li $v0, 0xffff00
+			j exit
+
+			pinta_morte:
+			la $v0, plataforma_mortal_cor
+			lw $v0, 0($v0)
+
         
         exit:
         lw $ra, 0($sp)
@@ -546,17 +560,29 @@ ativar_plataforma:
 rand:
     
 	addi $sp, $sp, -4
-		sw $ra, 0($sp)	
+		sw $ra, 0($sp)
+#		sw $s0, 4($sp)	
 
-	#gera um número aleatório entre 0 e 9 (numeração das plataformas)
-	addi $a1, $0, 10 #limite superior do sorteio (não incluso)
-	addi $v0, $0, 42 #pseudo número aleatório com limite superior
-	syscall
+	#verifica se a morte está habilitada:
+	#la $s0, invencibilidade
+	#lb $s0, 0($s0)
+	#bne $s0, $0, rand_continue #dano desabilitado
+			
+	pode_machucar:
+		#gera um número aleatório entre 0 e 9 (numeração das plataformas)
+		addi $a1, $0, 10 #limite superior do sorteio (não incluso)
+		addi $v0, $0, 42 #pseudo número aleatório com limite superior
+		syscall
 
-	move $v0, $a0 
-
-	lw $ra, 0($sp)
-	addi $sp, $sp, 4
+		move $v0, $a0 
+	
+	rand_continue:
+		#reabilita a morte
+		sb $0, 0($s0)
+		
+		lw $ra, 0($sp)
+#		lw $s0, 4($sp)
+		addi $sp, $sp, 4
 
 	jr $ra
 
