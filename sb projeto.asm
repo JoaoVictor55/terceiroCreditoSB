@@ -147,9 +147,10 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  #vetor com cor das plataformas
 	plataforma_ant: .space 4
 	plataforma_mortal: .byte -1 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
-	player_vidas: .byte 1 #quantas vidas o jogador tem
+	player_vidas: .byte 3 #quantas vidas o jogador tem
 	plataforma_mortal_cor: .word 0xff0000 #vermelho
 	invencibilidade: .byte 1 #quando 1 o dano é desabilitado
+	derrota_msg: .asciiz "morreu"
 
 .text
 
@@ -205,6 +206,7 @@ boneco_plataforma:
 	#checa se chegou ao final	
 	jal check_fim
 	beq $v0, 1, Exit
+	beq $v0, 2, Exit_Morte
 
 plataforma_loop: #imprime o boneco na plataforma repetidas vezes
         move $a0, $s5
@@ -221,6 +223,12 @@ Exit:
 	li $v0, 10 # terminate the program gracefully
 	syscall	
 #fim_main
+
+Exit_Morte:
+	#la $a0, derrota_msg
+	#jal print_text #possivelmente bugada
+	li $v0, 10
+	syscall 
 
 #calcula a posição da plataforma na tela
 linhah:	
@@ -471,6 +479,12 @@ check_fim:
 	li $t0, 0 # i = 0
 	la $t1, plataforma_cor # endereco base do vetor de cor
 	
+	la $t3, player_vidas
+	lb $t3, 0($t3)
+	
+	beq $t3, $0, morreu
+	
+	
 	loop:
 		beq $t0, 9, ganhou # se chegou todas as platormas foram verifica jogador ganhou
 			add $t2, $t1, $t0 #addiciona i ao endereco base
@@ -482,6 +496,11 @@ check_fim:
 	#se nao for encontrado nenhum zero saida eh verdadeira	
 	ganhou:
 		li $v0, 1
+		j exit_cf
+	
+	#se as vidas são zero, então ele morreu '-'
+	morreu:
+		li $v0, 2
 	
 	exit_cf:
 		addi $sp, $sp, -4
@@ -830,3 +849,19 @@ tela_fim:
     	sw    $t0,  2668($s0)
     	sw    $t0,  2796($s0)
 	jr $ra
+
+print_text: #a0 = string
+	
+	j ps_cond
+	
+	ps_loop:
+		lw $v0, 0xffff0008 #registrador de controle do display do teclado
+		andi $v0, $v0, 0x01 #verifica se ele está pronto
+		beq $v0, $0, ps_loop #se não tiver, então solicitamos de novo
+		sw $a1, 0xffff000c #joga os dados lidos no registror de dados do display do teclado
+	
+	ps_cond:
+		lbu $a1, ($a0)
+		addiu $a0, $a0, 1
+		bne $a1, $0, ps_loop
+		jr $ra
