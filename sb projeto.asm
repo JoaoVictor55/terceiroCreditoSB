@@ -557,16 +557,19 @@ ativar_plataforma:
 	addi $sp, $sp, 4
 	jr $ra
 
+#sorteia uma plataforma para ser obstáculo
+#a não ser que o bit de invencibilidade esteja ativado
 rand:
     
-	addi $sp, $sp, -4
+	addi $sp, $sp, -8
 		sw $ra, 0($sp)
-#		sw $s0, 4($sp)	
+		sw $s0, 4($sp)	
 
 	#verifica se a morte está habilitada:
-	#la $s0, invencibilidade
-	#lb $s0, 0($s0)
-	#bne $s0, $0, rand_continue #dano desabilitado
+	la $s0, invencibilidade
+	lb $t0, 0($s0)
+	addi $v0, $0, -1 #-1 indica que não foi sorteado número
+	bne $t0, $0, rand_continue #dano desabilitado
 			
 	pode_machucar:
 		#gera um número aleatório entre 0 e 9 (numeração das plataformas)
@@ -581,8 +584,8 @@ rand:
 		sb $0, 0($s0)
 		
 		lw $ra, 0($sp)
-#		lw $s0, 4($sp)
-		addi $sp, $sp, 4
+		lw $s0, 4($sp)
+		addi $sp, $sp, 8
 
 	jr $ra
 
