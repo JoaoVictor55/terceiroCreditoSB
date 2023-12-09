@@ -146,7 +146,8 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 	displayAddress:	.word	0x10008000
 	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  #vetor com cor das plataformas
 	plataforma_ant: .space 4
-	plataforma_mortal: .space 4 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
+	plataforma_mortal: .byte -1 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
+	player_vidas: .byte 1 #quantas vidas o jogador tem
 
 .text
 
@@ -191,7 +192,8 @@ boneco_plataforma:
 	
 	#pega sorteia uma plataforma
 	jal rand
-	move $a1, $v0 
+	la $t0, plataforma_mortal
+	sb $v0, 0($t0) #armazena o resultado do sorteio
 
 	#ativa a plataforma atual e imprime o fundo novamente
 	move $a0, $s4
@@ -507,6 +509,8 @@ get_color:
 	jr $ra
 	
 #troca a cor da plataforma atual
+#verifica se a plataforma ativada é a sorteada (marcada como obstáculo)
+#se for, então sinaliza que o player perdeu uma vida (vidas - 1)
 #a0 = numero da plataform
 ativar_plataforma:
 	addi $sp, $sp, -4
@@ -518,6 +522,23 @@ ativar_plataforma:
         #inverte bit de estado da plataforma
         not $t1, $t1
         sb $t1, ($t0)
+
+		la $t2, plataforma_mortal
+		lb $t2, 0($t2)
+
+		bne $t2, $a0, nao_tira_vida
+
+		#tira vida do player
+		la $t2, player_vidas
+		lb $t3, 0($t2)
+		addi $t3, $t3, -1 #subtrai quantas vidas
+		sb $t3, 0($t2)
+
+		addi $v0, $0, 1
+		move $a0, $t3
+		syscall
+
+		nao_tira_vida:
         lw $ra, 0($sp)
 	addi $sp, $sp, 4
 	jr $ra
