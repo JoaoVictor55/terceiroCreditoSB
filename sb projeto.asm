@@ -244,16 +244,16 @@ linhah:
 	addu $t4, $t6, $t7 #endereço
 	addu $t4, $t4, $s0
 	
-#desenha as plataformas	
-Linha:
-	addiu $t5,$t5, 1
-       	sw $a2, ($t4)	
-       	addiu $t4, $t4, 4
-       	
-       	bne $t5, 6, Linha #uma plataforma é formada por 5 pixels 
-		lw $ra, 0($sp)
-		addi $sp, $sp, 4
-		jr $ra
+	#desenha as plataformas	
+	Linha:
+		addiu $t5,$t5, 1
+       		sw $a2, ($t4)	
+ 	      	addiu $t4, $t4, 4
+       		bne $t5, 6, Linha #uma plataforma é formada por 5 pixels 
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
 	
 boneco:
 	addi $sp, $sp, -4
@@ -296,10 +296,77 @@ boneco:
 	addi $sp, $sp, 4
 	jr $ra
 
-#pinta fundo (plataformas)
+# bloco de codigo para pintar as paredes
+coluna:	
+       	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	li $t3, 0xff0000
+	li $t5, 0
+	sll $t6, $a1, 7  		# $a1 x 128 eixo y
+	sll $t7, $a0, 2  		# $a0 x 4 eixo x
+	addu $t4, $t6, $t7	 	# endereco
+	addiu $t4, $t4, 0x10008000	# endenreco $sp
+	
+	forInterno:
+    	   	addiu $t5, $t5, 1
+    	   	sw $t3, ($t4)	
+     	  	addiu $t4, $t4, 128
+     	  	bne $t5, 6, forInterno
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4	
+	jr $ra
+	
+# imprime as vidas do jogador
+imprimeVidas:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	la $t0, player_vidas
+	lb $t0, 0($t0)
+	
+	beq $t0, $0, naoImprimeVida
+		li $t3, 0x00ff00
+		li $t5, 0
+		sll $t6, $a1, 7			# $a1 x 128 eixo y
+		sll $t7, $a0, 2			# $a0 x 4 eixo x
+		addu $t4, $t6, $t7		# endereco
+		addiu $t4, $t4, 0x10008000	# endereco $sp
+	
+		while:
+       			addiu $t5, $t5, 1
+       			sw $t3, ($t4)	
+    	   		addiu $t4, $t4, 8
+     	  		bne $t5, $t0, while
+     	  	
+     	naoImprimeVida:
+     	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
+
+# pinta fundo (plataformas)
 fundo:
 	addi $sp, $sp, -4
         sw $ra, 0($sp)
+	
+	# as vidas do jogador
+	li $a1, 2
+	li $a0, 24
+	jal imprimeVidas
+	
+	# as paredes que servem como obstaculos
+	li $a1, 2
+	li $a0, 9
+	jal coluna
+	
+	li $a1, 22
+	li $a0, 9
+	jal coluna
+	
+	li $a1, 12
+	li $a0, 21
+	jal coluna
 
 	#pinta plataforma 0
 	li $a0, 0
@@ -522,18 +589,17 @@ get_color:
         # se o bit for zero ja era na cor padrao
         # se nao for zero troca a cor para a cor de ativado
         beqz $t0, exit
-			#se o bit for não for zero e for a plataforma escolhida
-			la $t1, plataforma_mortal
-			lb $t1, 0($t1)
+		#se o bit for não for zero e for a plataforma escolhida
+		la $t1, plataforma_mortal
+		lb $t1, 0($t1)
 
-			beq $a0, $t1, pinta_morte
-			
-        	li $v0, 0xffff00
+		beq $a0, $t1, pinta_morte
+   			li $v0, 0xffff00
 			j exit
 
-			pinta_morte:
-			la $v0, plataforma_mortal_cor
-			lw $v0, 0($v0)
+		pinta_morte:			
+		la $v0, plataforma_mortal_cor
+		lw $v0, 0($v0)
 
         
         exit:
@@ -581,8 +647,8 @@ ativar_plataforma:
 rand:
     
 	addi $sp, $sp, -8
-		sw $ra, 0($sp)
-		sw $s0, 4($sp)	
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)	
 
 	#verifica se a morte está habilitada:
 	la $s0, invencibilidade
