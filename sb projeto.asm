@@ -148,6 +148,7 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 	plataforma_ant: .space 4
 	plataforma_mortal: .byte -1 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
 	player_vidas: .byte 3 #quantas vidas o jogador tem
+	player_vidasMax: .byte 3 #o máximo de vidas que o jogador tem
 	plataforma_mortal_cor: .word 0xff0000 #vermelho
 	invencibilidade: .byte 1 #quando 1 o dano é desabilitado
 	derrota_msg: .asciiz "morreu"
@@ -225,8 +226,9 @@ Exit:
 #fim_main
 
 Exit_Morte:
-	#la $a0, derrota_msg
-	#jal print_text #possivelmente bugada
+	la $a0, derrota_msg
+	jal print_text #possivelmente bugada
+	jal tela_fim
 	li $v0, 10
 	syscall 
 
@@ -244,16 +246,16 @@ linhah:
 	addu $t4, $t6, $t7 #endereço
 	addu $t4, $t4, $s0
 	
-#desenha as plataformas	
-Linha:
-	addiu $t5,$t5, 1
-       	sw $a2, ($t4)	
-       	addiu $t4, $t4, 4
-       	
-       	bne $t5, 6, Linha #uma plataforma é formada por 5 pixels 
-		lw $ra, 0($sp)
-		addi $sp, $sp, 4
-		jr $ra
+	#desenha as plataformas	
+	Linha:
+		addiu $t5,$t5, 1
+       		sw $a2, ($t4)	
+ 	      	addiu $t4, $t4, 4
+       		bne $t5, 6, Linha #uma plataforma é formada por 5 pixels 
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
 	
 boneco:
 	addi $sp, $sp, -4
@@ -296,10 +298,97 @@ boneco:
 	addi $sp, $sp, 4
 	jr $ra
 
-#pinta fundo (plataformas)
+# bloco de codigo para pintar as paredes
+coluna:	
+       	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	li $t3, 0xff0000
+	li $t5, 0
+	sll $t6, $a1, 7  		# $a1 x 128 eixo y
+	sll $t7, $a0, 2  		# $a0 x 4 eixo x
+	addu $t4, $t6, $t7	 	# endereco
+	addiu $t4, $t4, 0x10008000	# endenreco $sp
+	
+	forInterno:
+    	   	addiu $t5, $t5, 1
+    	   	sw $t3, ($t4)	
+     	  	addiu $t4, $t4, 128
+     	  	bne $t5, 6, forInterno
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4	
+	jr $ra
+	
+# imprime as vidas do jogador
+imprimeVidas:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	la $t0, player_vidas
+	lb $t0, 0($t0)
+	
+		
+		li $t3, 0x00ff00 #verde
+		li $t5, 0
+		sll $t6, $a1, 7			# $a1 x 128 eixo y
+		sll $t7, $a0, 2			# $a0 x 4 eixo x
+		addu $t4, $t6, $t7		# endereco
+		addiu $t4, $t4, 0x10008000	# endereco $sp
+	
+		la $t7, player_vidasMax #o maximo de vidas
+		lb $t7, 0($t7)
+		sub $t7, $t7, $t0 #quantas vidas o player perdeu
+		
+		#quantas é para pintar de preto (sinaliza perda de vida)
+		beq $t7, $0, pinta_vida
+		li $t6, 0x000000 #preto
+		
+		remove_vida:
+			
+			addiu $t5, $t5, 1
+			sw $t6, ($t4)
+			addiu $t4, $t4, 8
+			bne $t7, $t5, remove_vida
+			
+		pinta_vida:
+		li $t5, 0
+		beq $t0, $0, naoImprimeVida #se a quantidade de vidas for 0
+	
+		while:
+       			addiu $t5, $t5, 1
+       			sw $t3, ($t4)	
+    	   		addiu $t4, $t4, 8
+     	  		bne $t5, $t0, while
+     	  	
+     	naoImprimeVida:
+     	
+     	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
+
+# pinta fundo (plataformas)
 fundo:
 	addi $sp, $sp, -4
         sw $ra, 0($sp)
+	
+	# as vidas do jogador
+	li $a1, 2
+	li $a0, 24
+	jal imprimeVidas
+	
+	# as paredes que servem como obstaculos
+	li $a1, 2
+	li $a0, 9
+	jal coluna
+	
+	li $a1, 22
+	li $a0, 9
+	jal coluna
+	
+	li $a1, 12
+	li $a0, 21
+	jal coluna
 
 	#pinta plataforma 0
 	li $a0, 0
@@ -519,21 +608,21 @@ get_color:
         add $t0, $t0, $a0 #adiciona o numero da plataforma ao endereco base
         lb $t0, ($t0) #pega o bit de ativacao da plataforma
         
+        
+		la $t1, plataforma_mortal
+		lb $t1, 0($t1)
+        
+		beq $a0, $t1, pinta_morte
+        
         # se o bit for zero ja era na cor padrao
         # se nao for zero troca a cor para a cor de ativado
         beqz $t0, exit
-			#se o bit for não for zero e for a plataforma escolhida
-			la $t1, plataforma_mortal
-			lb $t1, 0($t1)
+	   	li $v0, 0xffff00
+		j exit
 
-			beq $a0, $t1, pinta_morte
-			
-        	li $v0, 0xffff00
-			j exit
-
-			pinta_morte:
-			la $v0, plataforma_mortal_cor
-			lw $v0, 0($v0)
+		pinta_morte:			
+		la $v0, plataforma_mortal_cor
+		lw $v0, 0($v0)
 
         
         exit:
@@ -567,9 +656,9 @@ ativar_plataforma:
 		addi $t3, $t3, -1 #subtrai quantas vidas
 		sb $t3, 0($t2)
 
-		addi $v0, $0, 1
-		move $a0, $t3
-		syscall
+		#addi $v0, $0, 1
+		#move $a0, $t3
+		#syscall
 
 		nao_tira_vida:
         lw $ra, 0($sp)
@@ -581,8 +670,8 @@ ativar_plataforma:
 rand:
     
 	addi $sp, $sp, -8
-		sw $ra, 0($sp)
-		sw $s0, 4($sp)	
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)	
 
 	#verifica se a morte está habilitada:
 	la $s0, invencibilidade
@@ -595,8 +684,10 @@ rand:
 		addi $a1, $0, 10 #limite superior do sorteio (não incluso)
 		addi $v0, $0, 42 #pseudo número aleatório com limite superior
 		syscall
+		addi $v0 $0 1
+		syscall
+		move $v0, $a0
 
-		move $v0, $a0 
 	
 	rand_continue:
 		#reabilita a morte
@@ -606,10 +697,8 @@ rand:
 		lw $s0, 4($sp)
 		addi $sp, $sp, 8
 
-	jr $ra
 
-	#addi $v0 $0 1
-	#syscall
+	jr $ra
 
 #imprime a palavra fim nada tela	
 tela_fim:
@@ -855,9 +944,9 @@ print_text: #a0 = string
 	j ps_cond
 	
 	ps_loop:
-		lw $v0, 0xffff0008 #registrador de controle do display do teclado
-		andi $v0, $v0, 0x01 #verifica se ele está pronto
-		beq $v0, $0, ps_loop #se não tiver, então solicitamos de novo
+		#lw $v0, 0xffff0008 #registrador de controle do display do teclado
+		#andi $v0, $v0, 0x01 #verifica se ele está pronto
+		#beq $v0, $0, ps_loop #se não tiver, então solicitamos de novo
 		sw $a1, 0xffff000c #joga os dados lidos no registror de dados do display do teclado
 	
 	ps_cond:
