@@ -41,39 +41,42 @@ ori $k0, 0x01  # re-enable interrupts
 mtc0 $k0, $12  # Status
 eret
 
-#$s4 --> tela atual
-#$s5 --> valor x do boneco
-#$s6 --> valor y do boneco
-change_screen: #processa a entrada do jogador e calcula a nova posição.
-	#atribui ponto de retorno pra plataforma em loop
+# $s4 --> tela atual
+# $s5 --> valor x do boneco
+# $s6 --> valor y do boneco
+change_screen: # processa a entrada do jogador e calcula a nova posição.
+	# atribui ponto de retorno pra plataforma em loop
 	la $k0, plataforma_loop
 	
 	# ve qual tecla foi pressionada e qual acao tem que ser feita
 	# a0 = tecla precionada
-	beq $a0, 97, esquerda # tecla a
-	beq $a0, 65, esquerda # tecla A
-	beq $a0, 100, direita # tecla d
-	beq $a0, 68, direita # tecla D
-	beq $a0, 119, cima # tecla w
-	beq $a0, 87, cima # tecla W
-	beq $a0, 115, baixo # tecla s
-	beq $a0, 83, baixo # tecla S
+	beq $a0, 97, esquerda	# tecla a
+	beq $a0, 65, esquerda	# tecla A
+	beq $a0, 100, direita	# tecla d
+	beq $a0, 68, direita	# tecla D
+	beq $a0, 119, cima	# tecla w
+	beq $a0, 87, cima	# tecla W
+	beq $a0, 115, baixo	# tecla s
+	beq $a0, 83, baixo	# tecla S
 
 	sair:
-		mtc0 $k0, $14 #ponto de retorno eh atribuido ao EPC
+		mtc0 $k0, $14	# ponto de retorno eh atribuido ao EPC
 		jr $ra
 
 	# caso acao de ir para esquerda
 	esquerda:
 		#casos que nao podem ir pra esquerda
 		beq $s4, 0, sair
+		beq $s4, 1, sair		# parede 1
+		beq $s4, 5, sair		# parede 2
 		beq $s4, 3, sair
 		beq $s4, 6, sair
-		la $k0, boneco_plataforma #muda ponto de retorno para refazer a tela
-		sb $s4, plataforma_ant # plataforma anterior é atualizada
+		beq $s4, 7, sair		# parede 3
+		la $k0, boneco_plataforma	# muda ponto de retorno para refazer a tela
+		sb $s4, plataforma_ant		# plataforma anterior é atualizada
 	
-		#se puder ir pra esquerda 
-		#plataforma decrementa
+		# se puder ir pra esquerda 
+		# plataforma decrementa
 		# eixo x decrementa
 		addi $s4, $s4, -1
 		addi $s5, $s5, -12
@@ -81,15 +84,18 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 
 	# caso acao de ir para direita
 	direita:
-		#casos que nao podem ir pra direita
+		# casos que nao podem ir pra direita
+		beq $s4, 0, sair		# parede 1
 		beq $s4, 2, sair
+		beq $s4, 4, sair		# parede 2
 		beq $s4, 5, sair
+		beq $s4, 6, sair		# parede 3
 		beq $s4, 8, sair
-		la $k0, boneco_plataforma #muda ponto de retorno para refazer a tela
-		sb $s4, plataforma_ant # plataforma anterior é atualizada
+		la $k0, boneco_plataforma	# muda ponto de retorno para refazer a tela
+		sb $s4, plataforma_ant		# plataforma anterior é atualizada
 	
-		#se puder ir pra esquerda 
-		#plataforma incrementa
+		# se puder ir pra esquerda 
+		# plataforma incrementa
 		# eixo x incrementa
 		addi $s4, $s4, 1
 		addi $s5, $s5, 12
@@ -97,15 +103,15 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 	
 	# caso acao de ir para cima
 	cima:
-		#casos que nao podem ir pra cima
+		# casos que nao podem ir pra cima
 		beq $s4, 2, sair
 		beq $s4, 0, sair
 		beq $s4, 1, sair
-		la $k0, boneco_plataforma #muda ponto de retorno para refazer a tela
-		sb $s4, plataforma_ant # plataforma anterior é atualizada
+		la $k0, boneco_plataforma	# muda ponto de retorno para refazer a tela
+		sb $s4, plataforma_ant		# plataforma anterior é atualizada
 
-		#se puder ir pra esquerda 
-		#plataforma decrementada
+		# se puder ir pra esquerda 
+		# plataforma decrementada
 		# eixo y decrementado
 		addi $s4, $s4, -3
 		addi $s6, $s6, -10
@@ -113,15 +119,15 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 
 	# caso acao de ir para baixo			
 	baixo:
-		#casos que nao podem ir pra cima
+		# casos que nao podem ir pra cima
 		beq $s4, 6, sair
 		beq $s4, 7, sair
 		beq $s4, 8, sair
-		la $k0, boneco_plataforma #muda ponto de retorno para refazer a tela
-		sb $s4, plataforma_ant # plataforma anterior é atualizada
+		la $k0, boneco_plataforma	# muda ponto de retorno para refazer a tela
+		sb $s4, plataforma_ant		# plataforma anterior é atualizada
 	
-		#se puder ir pra esquerda 
-		#plataforma incrementada
+		# se puder ir pra esquerda 
+		# plataforma incrementada
 		# eixo y incrementado
 		addi $s4, $s4, 3
 		addi $s6, $s6, 10
@@ -141,22 +147,20 @@ change_screen: #processa a entrada do jogador e calcula a nova posição.
 
 
 # Feito por: Everaldina e Alberto
-
 .data
 	displayAddress:	.word	0x10008000
-	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  #vetor com cor das plataformas
+	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  # vetor com cor das plataformas
 	plataforma_ant: .space 4
-	plataforma_mortal: .byte -1 #qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
-	player_vidas: .byte 3 #quantas vidas o jogador tem
-	player_vidasMax: .byte 3 #o máximo de vidas que o jogador tem
-	plataforma_mortal_cor: .word 0xff0000 #vermelho
-	invencibilidade: .byte 1 #quando 1 o dano é desabilitado
+	plataforma_mortal: .byte -1		# qual plataforma que ao pisar perde vida (vamos considerar que apenas pode ser)
+	player_vidas: .byte 3			# quantas vidas o jogador tem
+	player_vidasMax: .byte 3		# o máximo de vidas que o jogador tem
+	plataforma_mortal_cor: .word 0xff0000	# vermelho
+	invencibilidade: .byte 1		# quando 1 o dano é desabilitado
 	derrota_msg: .asciiz "morreu"
-
+	# estiloParede: .byte 0			# valor para determinar como as paredes irao aparecer no mapa
 .text
 
 main:
-
 	lw $s0, displayAddress	# $s0 stores the base address for display
 	
 	#cores
@@ -365,6 +369,26 @@ imprimeVidas:
      	
      	lw $ra, 0($sp)
 	addi $sp, $sp, 4
+	jr $ra
+	
+# gera um numero aleatorio no alcance e retorna o valor em $v0
+rangeNumber:
+	# salvando o ponteiro de retorno na pilha
+	sw $ra, 0($sp)
+	addi $sp, $sp, -4
+	
+	# $a0 == i.d. of pseudorandom number generator
+	# $a1 == upper bound of range of returned values
+	li $v0, 42
+	syscall
+	
+	# retomando da pilha o ponteiro de retorno da funcao
+	addi $sp, $sp, 4
+	lw $ra, 0($sp)
+	
+	# passando valor de retorno
+	# e retornando para main
+	move $v0, $a0
 	jr $ra
 
 # pinta fundo (plataformas)
@@ -665,24 +689,24 @@ ativar_plataforma:
 	addi $sp, $sp, 4
 	jr $ra
 
-#sorteia uma plataforma para ser obstáculo
-#a não ser que o bit de invencibilidade esteja ativado
+# sorteia uma plataforma para ser obstáculo
+# a não ser que o bit de invencibilidade esteja ativado
 rand:
     
 	addi $sp, $sp, -8
 	sw $ra, 0($sp)
 	sw $s0, 4($sp)	
 
-	#verifica se a morte está habilitada:
+	# verifica se a morte está habilitada:
 	la $s0, invencibilidade
 	lb $t0, 0($s0)
-	addi $v0, $0, -1 #-1 indica que não foi sorteado número
-	bne $t0, $0, rand_continue #dano desabilitado
+	addi $v0, $0, -1		# -1 indica que não foi sorteado número
+	bne $t0, $0, rand_continue	# dano desabilitado
 			
 	pode_machucar:
-		#gera um número aleatório entre 0 e 9 (numeração das plataformas)
-		addi $a1, $0, 10 #limite superior do sorteio (não incluso)
-		addi $v0, $0, 42 #pseudo número aleatório com limite superior
+		# gera um número aleatório entre 0 e 9 (numeração das plataformas)
+		addi $a1, $0, 10 # limite superior do sorteio (não incluso)
+		addi $v0, $0, 42 # pseudo número aleatório com limite superior
 		syscall
 		addi $v0 $0 1
 		syscall
@@ -690,7 +714,7 @@ rand:
 
 	
 	rand_continue:
-		#reabilita a morte
+		# reabilita a morte
 		sb $0, 0($s0)
 		
 		lw $ra, 0($sp)
@@ -700,12 +724,12 @@ rand:
 
 	jr $ra
 
-#imprime a palavra fim nada tela	
+# imprime a palavra fim nada tela	
 tela_fim:
 	li $t0, 0x7f7f7f
 	li $t1, 0xffffffff
 	
-	#F coluna1
+	# F coluna1
 	sw    $t0,  1556($s0)
 	sw    $t0,  1684($s0)
 	sw    $t0,  1812($s0)
