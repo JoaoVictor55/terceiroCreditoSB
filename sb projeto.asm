@@ -1,7 +1,9 @@
-# Feito por: Everaldina e Alberto
-#
+#Discente: Igor Sousa Santana e João Victor Sousa da Silva
+#original: Everaldina e Alberto
+
 # controla com teclas awsd
 # objetivo eh deixar tds as plataformas amarelas
+#plataformas vermelhas dão dano. Se chegar a 0 vidas o jogo acaba
 .kdata
 ktemp:	.space 20
 
@@ -144,9 +146,7 @@ change_screen: # processa a entrada do jogador e calcula a nova posição.
 #
 # controla com teclas awsd
 # objetivo eh deixar tds as plataformas amarelas
-
-
-# Feito por: Everaldina e Alberto
+# plataformas vermelhas dão dano, o jogador tem 3 vidas
 .data
 	displayAddress:	.word	0x10008000
 	plataforma_cor: .byte 0, 0, 0, 0, 0, 0, 0, 0, 0  # vetor com cor das plataformas
@@ -362,7 +362,7 @@ imprimeVidas:
 		while:
        			addiu $t5, $t5, 1
        			sw $t3, ($t4)	
-    	   		addiu $t4, $t4, 8
+    	   			addiu $t4, $t4, 8
      	  		bne $t5, $t0, while
      	  	
      	naoImprimeVida:
